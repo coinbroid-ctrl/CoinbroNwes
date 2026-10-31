@@ -1,12 +1,15 @@
-# CoinbroNwes — Asisten AI harian (CLI)
+# CoinbroNwes — JARVIS, asisten AI harian (CLI)
 
 Teman ngobrol + asisten konten CoinbroNews, dengan memori yang tersimpan antar hari.
 
 ```bash
-pip install -r assistant/requirements.txt
+pip install -r jarvis/requirements.txt
 export ANTHROPIC_API_KEY=sk-ant-...
-python assistant/chat.py
+python jarvis/jarvis.py
 ```
 
 Perintah: `/news <topik>`, `/chat`, `/remember <fakta>`, `/memory`, `/new`, `/exit`.
-Data tersimpan di `~/.coinbro_assistant/` (ubah dengan `ASSISTANT_HOME`).
+Data tersimpan di `~/.coinbro_jarvis/` (ubah dengan `JARVIS_HOME`).
+
+## Kemampuan (tools)
+Harga crypto live (CoinGecko), baca halaman web, simpan/baca catatan, dan jalankan perintah shell (selalu minta konfirmasi `y/N`).
