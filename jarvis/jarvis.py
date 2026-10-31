@@ -24,6 +24,7 @@ MODEL = os.environ.get("JARVIS_MODEL", "claude-sonnet-5-5")
 DATA = Path(os.environ.get("JARVIS_HOME", Path.home() / ".jarvis"))
 HISTORY = DATA / "history.json"
 MEMORY = DATA / "memory.md"
+LEGACY_DATA = Path(os.environ.get("ASSISTANT_HOME", Path.home() / ".coinbro_assistant"))
 MAX_TURNS = 40  # pesan terakhir yang dikirim ke model
 
 CHAT_PROMPT = """Kamu adalah J.A.R.V.I.S., asisten pribadi AI milik user (gaya Iron Man: sigap, cerdas, sedikit witty,
@@ -101,6 +102,16 @@ def run_tool(name, args):
     return "tool tidak dikenal"
 
 
+def migrate_legacy_data():
+    """Salin data versi lama (~/.coinbro_assistant) ke folder Jarvis kalau belum ada."""
+    if DATA.exists() or not LEGACY_DATA.is_dir():
+        return
+    DATA.mkdir(parents=True)
+    for f in (LEGACY_DATA / "history.json", LEGACY_DATA / "memory.md"):
+        if f.exists():
+            (DATA / f.name).write_bytes(f.read_bytes())
+
+
 def load_json(path, default):
     try:
         return json.loads(path.read_text())
@@ -150,6 +161,7 @@ def main():
     if not os.environ.get("ANTHROPIC_API_KEY"):
         sys.exit("Set dulu: export ANTHROPIC_API_KEY=sk-ant-...")
     client = anthropic.Anthropic()
+    migrate_legacy_data()
     messages = load_json(HISTORY, [])
     mode = "chat"
     print(f"JARVIS online, bos ({len(messages)} pesan tersimpan). /exit untuk keluar.\n")
