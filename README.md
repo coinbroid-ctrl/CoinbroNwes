@@ -12,4 +12,4 @@ Perintah: `/news <topik>`, `/chat`, `/remember <fakta>`, `/memory`, `/new`, `/ex
 Data tersimpan di `~/.coinbro_jarvis/` (ubah dengan `JARVIS_HOME`).
 
 ## Kemampuan (tools)
-Harga crypto live (CoinGecko), baca halaman web, simpan/baca catatan, dan jalankan perintah shell (selalu minta konfirmasi `y/N`).
+Harga crypto live (CoinGecko), cari berita terbaru (Google News), baca halaman web, simpan/baca catatan, dan jalankan perintah shell (selalu minta konfirmasi `y/N`).
