@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 import urllib.parse
 import urllib.request
 from datetime import date
@@ -28,7 +29,7 @@ LEGACY_DATA = Path(os.environ.get("ASSISTANT_HOME", Path.home() / ".coinbro_assi
 MAX_TURNS = 40  # pesan terakhir yang dikirim ke model
 
 CHAT_PROMPT = """Kamu adalah J.A.R.V.I.S., asisten pribadi AI milik user (gaya Iron Man: sigap, cerdas, sedikit witty,
-memanggil user "bos" atau "bro"). Kamu punya tools: harga crypto live, baca halaman web, baca/tulis file
+memanggil user "bos" atau "bro"). Kamu punya tools: harga crypto live, cari berita terbaru, baca halaman web, baca/tulis file
 catatan, dan jalankan perintah shell (user akan diminta konfirmasi). Pakai tools kalau itu membuat jawaban
 lebih akurat, jangan menebak data real-time. Kalau sesuatu di luar kemampuanmu, bilang terus terang.
 Kamu teman ngobrol & asisten pribadi harian. Pakai bahasa Indonesia santai
@@ -46,8 +47,8 @@ Untuk setiap topik yang diberikan, hasilkan DUA output:
    penutup dengan pertanyaan untuk memancing komentar, 3-5 hashtag.
 2. Tweet/X: maksimal 280 karakter, hook tajam, 1-2 hashtag.
 Gaya: lugas, tidak lebay, tanpa janji profit atau financial advice; beri disclaimer singkat
-"bukan saran finansial" bila membahas harga. Jangan mengarang data/angka; kalau tidak yakin
-soal fakta terbaru, katakan dan minta user verifikasi sumbernya.
+"bukan saran finansial" bila membahas harga. Jangan mengarang data/angka. SEBELUM menulis, panggil tool search_news (dan crypto_price bila
+relevan) untuk fakta terbaru, lalu sebutkan sumbernya. Kalau tidak yakin, katakan dan minta user verifikasi.
 Hari ini: {today}.
 
 Memori permanen tentang user:
@@ -60,6 +61,8 @@ NOTES = DATA / "notes"
 TOOLS = [
     {"name": "crypto_price", "description": "Harga crypto live (USD) + perubahan 24 jam dari CoinGecko. ids contoh: bitcoin, ethereum, solana.",
      "input_schema": {"type": "object", "properties": {"ids": {"type": "string", "description": "id CoinGecko dipisah koma"}}, "required": ["ids"]}},
+    {"name": "search_news", "description": "Cari berita terbaru di web (Google News). Balikin judul, sumber, tanggal, link. Pakai ini untuk berita/kejadian terkini.",
+     "input_schema": {"type": "object", "properties": {"query": {"type": "string"}, "lang": {"type": "string", "enum": ["id", "en"], "description": "bahasa hasil, default id"}, "limit": {"type": "integer", "description": "jumlah hasil, default 8"}}, "required": ["query"]}},
     {"name": "fetch_url", "description": "Ambil isi teks sebuah halaman web (dipotong 6000 karakter).",
      "input_schema": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}},
     {"name": "save_note", "description": "Simpan catatan (teks) ke file di folder notes Jarvis.",
@@ -71,10 +74,30 @@ TOOLS = [
 ]
 
 
-def http_get(url, limit=6000):
+def http_get(url, limit=6000):  # limit = jumlah karakter yang dikembalikan
     req = urllib.request.Request(url, headers={"User-Agent": "Jarvis/1.0"})
     with urllib.request.urlopen(req, timeout=20) as r:
-        return r.read(200000).decode("utf-8", "ignore")[:limit]
+        return r.read(600000).decode("utf-8", "ignore")[:limit]
+
+
+def parse_news(xml_text, limit=8):
+    items = []
+    for it in ET.fromstring(xml_text).iter("item"):
+        src = it.find("source")
+        items.append(
+            f"- {it.findtext('title', '')} | {src.text if src is not None else '?'} | "
+            f"{it.findtext('pubDate', '')} | {it.findtext('link', '')}"
+        )
+        if len(items) >= limit:
+            break
+    return "\n".join(items) or "(tidak ada hasil)"
+
+
+def search_news(query, lang="id", limit=8):
+    hl, gl = ("id", "ID") if lang == "id" else ("en-US", "US")
+    q = urllib.parse.quote(query)
+    url = f"https://news.google.com/rss/search?q={q}&hl={hl}&gl={gl}&ceid={gl}:{hl.split('-')[0]}"
+    return parse_news(http_get(url, limit=500000), max(1, min(int(limit), 15)))
 
 
 def run_tool(name, args):
@@ -82,6 +105,8 @@ def run_tool(name, args):
         if name == "crypto_price":
             q = urllib.parse.quote(args["ids"].replace(" ", ""))
             return http_get(f"https://api.coingecko.com/api/v3/simple/price?ids={q}&vs_currencies=usd&include_24hr_change=true")
+        if name == "search_news":
+            return search_news(args["query"], args.get("lang", "id"), args.get("limit", 8))
         if name == "fetch_url":
             return http_get(args["url"])
         if name == "save_note":
