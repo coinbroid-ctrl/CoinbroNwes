@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Server guru bahasa Inggris berbasis suara.
 
-  ANTHROPIC_API_KEY=... python voice-teacher/server.py     -> http://localhost:8000
+  TEACHER_API_KEY=... python voice-teacher/server.py     -> http://localhost:8000
   TEACHER_MOCK=1 python voice-teacher/server.py            -> guru tiruan, tanpa API key
 
 Browser menangani mikrofon, pengenalan suara dan text-to-speech; server ini hanya
@@ -28,7 +28,9 @@ MAX_MESSAGES = 40
 # Model yang mendukung fallback sisi server bila sebuah permintaan ditolak classifier.
 FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5", "claude-fable-5-2", "claude-fable-5-1"}
 
-client = None if MOCK else anthropic.AsyncAnthropic()
+# Kunci dibaca dari environment saja, tidak pernah ditulis di kode. TEACHER_API_KEY didahulukan supaya bisa
+# dipisah dari kunci lain di mesin yang sama; kalau kosong, SDK memakai ANTHROPIC_API_KEY.
+client = None if MOCK else anthropic.AsyncAnthropic(api_key=os.environ.get("TEACHER_API_KEY") or None)
 
 
 def clean_messages(raw):
@@ -89,7 +91,7 @@ async def turn(request):
                 yield sse(ev)
             yield sse({"type": "done"})
         except anthropic.AuthenticationError:
-            yield sse({"type": "error", "message": "API key tidak valid. Periksa ANTHROPIC_API_KEY di server."})
+            yield sse({"type": "error", "message": "API key tidak valid. Periksa TEACHER_API_KEY di server."})
         except anthropic.RateLimitError:
             yield sse({"type": "error", "message": "Server sedang sibuk (rate limit). Coba lagi sebentar."})
         except anthropic.APIStatusError as e:
@@ -98,7 +100,7 @@ async def turn(request):
             yield sse({"type": "error", "message": "Tidak bisa terhubung ke layanan AI."})
         except Exception as e:  # mis. API key belum diatur: tetap beri tahu klien, jangan putus diam-diam
             print(f"turn gagal: {e!r}")
-            yield sse({"type": "error", "message": "Server guru belum siap. Periksa ANTHROPIC_API_KEY di server."})
+            yield sse({"type": "error", "message": "Server guru belum siap. Periksa TEACHER_API_KEY di server."})
 
     return StreamingResponse(events(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

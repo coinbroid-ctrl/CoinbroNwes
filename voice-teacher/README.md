@@ -5,7 +5,7 @@ Tidak ada kolom ketik dan tidak ada tombol kirim.
 
 ```bash
 pip install -r voice-teacher/requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...
+export TEACHER_API_KEY=sk-ant-...   # atau ANTHROPIC_API_KEY
 python voice-teacher/server.py          # buka http://localhost:8000 di Chrome
 ```
 
@@ -39,6 +39,7 @@ langsung diucapkan begitu selesai dibuat, tanpa menunggu seluruh balasan.
 
 | Variabel | Default | Keterangan |
 |---|---|---|
+| `TEACHER_API_KEY` | – | Kunci API Anthropic (cadangan: `ANTHROPIC_API_KEY`). Jangan pernah ditulis di kode |
 | `TEACHER_MODEL` | `claude-opus-5-5` | Untuk jeda paling singkat dan biaya paling rendah, coba `claude-haiku-5-5` |
 | `TEACHER_EFFORT` | `low` | Effort rendah = balasan lebih cepat |
 | `TEACHER_MOCK` | – | `1` = guru tiruan tanpa API |
