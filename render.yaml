@@ -1,0 +1,18 @@
+# Deploy Miss Ava (voice-teacher/) ke Render, paket gratis.
+# Awalnya berjalan dalam MODE DEMO (guru tiruan, tanpa API key).
+# Untuk guru AI sungguhan: di dashboard Render, hapus TEACHER_MOCK lalu tambahkan TEACHER_API_KEY
+# (isi kuncinya hanya di dashboard, jangan pernah di file ini).
+services:
+  - type: web
+    name: miss-ava
+    runtime: python
+    plan: free
+    branch: claude/voice-first-language-learning-36wx2j
+    buildCommand: pip install -r voice-teacher/requirements.txt
+    startCommand: python voice-teacher/server.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: TEACHER_MOCK
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.12.7"
