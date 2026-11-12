@@ -13,3 +13,7 @@ Data tersimpan di `~/.coinbro_jarvis/` (ubah dengan `JARVIS_HOME`).
 
 ## Kemampuan (tools)
 Harga crypto live (CoinGecko), cari berita terbaru (Google News), baca halaman web, simpan/baca catatan, dan jalankan perintah shell (selalu minta konfirmasi `y/N`).
+
+## Miss Ava — guru bahasa Inggris berbasis suara
+Aplikasi web voice-first (tanpa mengetik) ada di [`voice-teacher/`](voice-teacher/README.md):
+`python voice-teacher/server.py` lalu buka http://localhost:8000.
